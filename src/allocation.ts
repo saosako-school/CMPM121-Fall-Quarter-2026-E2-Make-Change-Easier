@@ -7,7 +7,16 @@ const readout = document.querySelector<HTMLParagraphElement>(
 )!;
 let assignedProducer = 2;
 
-function determineShiftResources(numProducers: number, amountConsumed: number) {
+interface ShiftSupplies {
+  production: number;
+  consumption: number;
+  balance: number;
+}
+
+function determineShiftResources(
+  numProducers: number,
+  amountConsumed: number,
+): ShiftSupplies {
   const suppliesMadePerProducer = 3;
   const resourcesProduced = numProducers * suppliesMadePerProducer;
   const resourceBalance = resourcesProduced - amountConsumed;
@@ -18,31 +27,44 @@ function determineShiftResources(numProducers: number, amountConsumed: number) {
   };
 }
 
-function updateScreenA() {
-  const crewSupplies = determineShiftResources(assignedProducer, 6);
+function displayShiftReportGraphics(
+  supplies: ShiftSupplies,
+  numProducers: number,
+) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = i < assignedProducer ? "#27766b" : "#c9d2c9";
+    ctx.fillStyle = i < numProducers ? "#27766b" : "#c9d2c9";
     ctx.fillRect(18 + i * 45, 16, 36, 36);
-    ctx.fillStyle = i < assignedProducer ? "#ffffff" : "#233e43";
+    ctx.fillStyle = i < numProducers ? "#ffffff" : "#233e43";
     ctx.font = "16px system-ui";
     ctx.fillText(String(i + 1), 31 + i * 45, 40);
   }
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
-  ctx.fillText(`Producers: ${assignedProducer} / 6`, 18, 76);
-  ctx.fillText(`Production: ${crewSupplies.production}`, 18, 102);
+  ctx.fillText(`Producers: ${numProducers} / 6`, 18, 76);
+
+  ctx.fillText(`Production: ${supplies.production}`, 18, 102);
   ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, crewSupplies.production * 14, 20);
+  ctx.fillRect(18, 110, supplies.production * 14, 20);
   ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${crewSupplies.consumption}`, 18, 154);
+  ctx.fillText(`Consumption: ${supplies.consumption}`, 18, 154);
   ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, crewSupplies.consumption * 14, 20);
+  ctx.fillRect(18, 162, supplies.consumption * 14, 20);
+}
+
+function displayShiftReportText(supplies: ShiftSupplies, numProducers: number) {
   readout.textContent =
-    `Assigned: ${assignedProducer}/6 · Production: ${crewSupplies.production} · Consumption: ${crewSupplies.consumption} · Balance: ${
-      crewSupplies.balance > 0 ? "+" : ""
-    }${crewSupplies.balance}`;
+    `Assigned: ${numProducers}/6 · Production: ${supplies.production} · Consumption: ${supplies.consumption} · Balance: ${
+      supplies.balance > 0 ? "+" : ""
+    }${supplies.balance}`;
+}
+
+function updateScreenA() {
+  const crewSupplies = determineShiftResources(assignedProducer, 6);
+
+  displayShiftReportGraphics(crewSupplies, assignedProducer);
+  displayShiftReportText(crewSupplies, assignedProducer);
 }
 
 document.querySelector<HTMLButtonElement>("#allocation-less")!.onclick = () => {
