@@ -13,6 +13,12 @@ interface ShiftSupplies {
   balance: number;
 }
 
+interface SupplyRecord {
+  label: string;
+  value: number;
+  color: string;
+}
+
 function determineShiftResources(
   numProducers: number,
   amountConsumed: number,
@@ -31,6 +37,16 @@ function displayShiftReportGraphics(
   supplies: ShiftSupplies,
   numProducers: number,
 ) {
+  const supplyRecords: [SupplyRecord, SupplyRecord] = [{
+    label: "Production",
+    value: supplies.production,
+    color: "#27766b",
+  }, {
+    label: "Consumption",
+    value: supplies.consumption,
+    color: "#a44d23",
+  }];
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (let i = 0; i < 6; i++) {
@@ -40,17 +56,21 @@ function displayShiftReportGraphics(
     ctx.font = "16px system-ui";
     ctx.fillText(String(i + 1), 31 + i * 45, 40);
   }
+
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
   ctx.fillText(`Producers: ${numProducers} / 6`, 18, 76);
 
-  ctx.fillText(`Production: ${supplies.production}`, 18, 102);
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, supplies.production * 14, 20);
-  ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${supplies.consumption}`, 18, 154);
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, supplies.consumption * 14, 20);
+  for (let j = 0; j < supplyRecords.length; j++) {
+    ctx.fillText(
+      `${supplyRecords[j].label}: ${supplyRecords[j].value}`,
+      18,
+      102 + (j * 52),
+    );
+    ctx.fillStyle = supplyRecords[j].color;
+    ctx.fillRect(18, 110 + (j * 52), supplyRecords[j].value * 14, 20);
+    ctx.fillStyle = "#233e43";
+  }
 }
 
 function displayShiftReportText(supplies: ShiftSupplies, numProducers: number) {
