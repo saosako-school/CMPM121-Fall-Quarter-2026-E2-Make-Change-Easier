@@ -30,10 +30,14 @@ function boundNumber(num: number) {
 }
 
 interface RoverCommand {
+  name: string;
   command: () => void;
 }
 
+let commandQueue: RoverCommand[] = [];
+
 const forward: RoverCommand = {
+  name: "Forward",
   command: () => {
     x = x + directions[direction].dx;
     x = boundNumber(x);
@@ -43,10 +47,25 @@ const forward: RoverCommand = {
 };
 
 const right: RoverCommand = {
+  name: "Right",
   command: () => {
     direction = (direction + 1) % 4;
   },
 };
+
+function displayCommandQueue() {
+  const queueStatus = document.getElementById("rover-queue-status");
+  queueStatus!.textContent = "";
+  if (commandQueue.length === 0) {
+    queueStatus!.textContent = "Empty";
+  } else {
+    for (const commandObj of commandQueue) {
+      const newCommand = document.createElement("div");
+      newCommand.textContent = commandObj.name;
+      queueStatus!.append(newCommand);
+    }
+  }
+}
 
 function drawRover() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -73,17 +92,30 @@ function drawRover() {
 }
 
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  forward.command();
-  drawRover();
+  commandQueue.push(forward);
+  displayCommandQueue();
 };
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  right.command();
-  drawRover();
+  commandQueue.push(right);
+  displayCommandQueue();
 };
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   direction = 0;
+  commandQueue = [];
   drawRover();
+  displayCommandQueue();
+};
+document.querySelector<HTMLButtonElement>("#rover-run")!.onclick = () => {
+  while (commandQueue.length > 0) {
+    commandQueue.shift()!.command();
+  }
+  drawRover();
+  displayCommandQueue();
+};
+document.querySelector<HTMLButtonElement>("#rover-clear")!.onclick = () => {
+  commandQueue = [];
+  displayCommandQueue();
 };
 drawRover();
