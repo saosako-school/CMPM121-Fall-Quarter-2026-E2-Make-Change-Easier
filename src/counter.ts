@@ -34,7 +34,7 @@ const shieldStatus: ShieldStatus = {
 shieldStatus.eventTarget.addEventListener(
   "shieldChange",
   (event) => {
-    const customEvent = event as CustomEvent;
+    const customEvent: CustomEvent<ShieldSnapshot> = event as CustomEvent;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < customEvent.detail.capacitySnapshot; ++i) {
       ctx.fillStyle = i < customEvent.detail.currentChargeSnapshot
@@ -57,22 +57,31 @@ shieldStatus.eventTarget.addEventListener(
 let panel: HTMLParagraphElement | null = null;
 let panelUpdates = 0;
 
+function getSnapshot(shield: ShieldStatus): ShieldSnapshot {
+  return {
+    currentChargeSnapshot: shield.currentCharge,
+    capacitySnapshot: shield.capacity,
+    missingChargeSnapshot: shield.missingCharge,
+  };
+}
+
+function updatePanel(event: Event) {
+  const customEvent: CustomEvent<ShieldSnapshot> = event as CustomEvent;
+  panelUpdates++;
+  diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
+  renderStats(customEvent.detail);
+}
+
 function updateCharge(shield: ShieldStatus, newCharge: number) {
   shield.currentCharge = newCharge;
   shield.missingCharge = shield.capacity -
     shield.currentCharge;
 }
 
-function updateStats(shield: ShieldStatus) {
-  panelUpdates++;
-  diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
-  renderStats(shield);
-}
-
-function renderStats(shield: ShieldStatus) {
+function renderStats(shieldSnapshot: ShieldSnapshot) {
   if (!panel) return;
   panel.textContent =
-    `Shield charge: ${shield.currentCharge} · Missing charge: ${shield.missingCharge}`;
+    `Shield charge: ${shieldSnapshot.currentChargeSnapshot} · Missing charge: ${shieldSnapshot.missingChargeSnapshot}`;
 }
 
 function setCount(shield: ShieldStatus, change: number) {
@@ -84,14 +93,9 @@ function setCount(shield: ShieldStatus, change: number) {
   updateCharge(shield, bounded);
   shield.eventTarget.dispatchEvent(
     new CustomEvent<ShieldSnapshot>("shieldChange", {
-      detail: {
-        currentChargeSnapshot: shield.currentCharge,
-        capacitySnapshot: shield.capacity,
-        missingChargeSnapshot: shield.missingCharge,
-      },
+      detail: getSnapshot(shield),
     }),
   );
-  if (panel) updateStats(shield);
 }
 
 document.querySelector<HTMLButtonElement>("#counter-less")!.onclick = () => {
@@ -107,20 +111,18 @@ document.querySelector<HTMLButtonElement>("#counter-open")!.onclick = () => {
   if (panel) return;
   panel = document.createElement("p");
   host.append(panel);
-  renderStats(shieldStatus);
+  renderStats(getSnapshot(shieldStatus));
+  shieldStatus.eventTarget.addEventListener("shieldChange", updatePanel);
 };
 document.querySelector<HTMLButtonElement>("#counter-close")!.onclick = () => {
   if (!panel) return;
+  shieldStatus.eventTarget.removeEventListener("shieldChange", updatePanel);
   panel.remove();
   panel = null;
 };
 
 shieldStatus.eventTarget.dispatchEvent(
-  new CustomEvent("shieldChange", {
-    detail: {
-      currentChargeSnapshot: shieldStatus.currentCharge,
-      capacitySnapshot: shieldStatus.capacity,
-      missingChargeSnapshot: shieldStatus.missingCharge,
-    },
+  new CustomEvent<ShieldSnapshot>("shieldChange", {
+    detail: getSnapshot(shieldStatus),
   }),
 );
